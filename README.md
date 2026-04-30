@@ -131,6 +131,15 @@ bash ~/.dotfiles/install.sh --restore
 . "$HOME\.dotfiles\install.ps1" -Restore
 ```
 
+## Caveats (Read Before Use)
+
+These are intentional design choices that suit the author's workflow but may not suit yours. Review and adjust as needed:
+
+- **Auto-push on shell exit (macOS/Linux).** The bashrc automatically runs `git add . && commit && push` on the dotfiles repo when you close a terminal. If you prefer manual control, remove or comment out the `exit_actions` function and the `trap exit_actions EXIT` line in `bash/bashrc`.
+- **`git add .` in dotpush / auto-push.** This stages all changes including untracked files. If you keep sensitive files in `~/.dotfiles/`, consider changing to `git add -u` or adding them to a `.gitignore`.
+- **`credential.helper = store`.** The included gitconfig stores Git credentials in plaintext at `~/.git-credentials`. For better security, change it to `helper = cache` (in-memory, expires after 15 min) or use a platform-native helper (`osxkeychain` on macOS, `manager` on Windows).
+- **Proxy port hardcoded.** `proxy_on` / `proxy_off` use `127.0.0.1:12334`. Change the port in both `bash/bash_aliases` and `powershell/Microsoft.PowerShell_profile.ps1` to match your proxy.
+
 ## Notes
 
 - **Bash only.** No zsh setup.
