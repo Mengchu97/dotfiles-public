@@ -36,7 +36,7 @@ echo "Vim Configuration Setup"
 echo "======================="
 
 VIM_TARGET="$HOME/.vimrc"
-VIM_MARKER="# >>> dotfiles >>>"
+VIM_MARKER="\" >>> dotfiles >>>"
 
 if [ -f "$VIM_TARGET" ]; then
     if grep -q "$VIM_MARKER" "$VIM_TARGET"; then
@@ -49,7 +49,7 @@ if [ -f "$VIM_TARGET" ]; then
             echo ""
             echo "$VIM_MARKER"
             echo "source $VIM_DIR/vimrc"
-            echo "# <<< dotfiles <<<"
+            echo "\" <<< dotfiles <<<"
         } >> "$VIM_TARGET"
         echo "  Configured .vimrc to source $VIM_DIR/vimrc"
     fi
@@ -57,7 +57,7 @@ else
     {
         echo "$VIM_MARKER"
         echo "source $VIM_DIR/vimrc"
-        echo "# <<< dotfiles <<<"
+        echo "\" <<< dotfiles <<<"
     } > "$VIM_TARGET"
     echo "  Created .vimrc sourcing $VIM_DIR/vimrc"
 fi

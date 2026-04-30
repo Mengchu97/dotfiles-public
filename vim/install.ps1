@@ -46,7 +46,7 @@ Write-Host "======================="
 $vimTarget = "$HOME\_vimrc"
 if (Test-Path "$HOME\.vimrc") { $vimTarget = "$HOME\.vimrc" }
 
-$vimMarker = "' >>> dotfiles >>>"
+$vimMarker = '" >>> dotfiles >>>'
 
 if (Test-Path $vimTarget) {
     $vimContent = Get-Content $vimTarget -Raw -ErrorAction SilentlyContinue
@@ -59,7 +59,7 @@ if (Test-Path $vimTarget) {
         @"
 $vimMarker
 source $VIM_DIR\vimrc
-' <<< dotfiles <<<
+" <<< dotfiles <<<
 "@ | Add-Content $vimTarget -Encoding UTF8
         Write-Host "  Configured to source $VIM_DIR\vimrc" -ForegroundColor Green
     }
@@ -67,7 +67,7 @@ source $VIM_DIR\vimrc
     @"
 $vimMarker
 source $VIM_DIR\vimrc
-' <<< dotfiles <<<
+" <<< dotfiles <<<
 "@ | Set-Content $vimTarget -Encoding UTF8
     Write-Host "  Created $vimTarget sourcing $VIM_DIR\vimrc" -ForegroundColor Green
 }
