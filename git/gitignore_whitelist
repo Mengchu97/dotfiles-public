@@ -1,0 +1,88 @@
+# ================================================================= #
+#                 Whitelist Gitignore Template                      #
+# ================================================================= #
+# Strict mode: Ignore everything by default, only allow specific files.
+
+# 1. Block everything
+*
+# But allow directory traversal (so we can un-ignore files inside)
+!*/
+
+# 2. Whitelist Core Project Files
+!.gitignore
+!.gitattributes
+!.editorconfig
+!.pre-commit-config.yaml
+!README.md
+!readme.md
+!README
+!readme
+!LICENSE
+!LICENSE.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+
+# 3. Whitelist Source Code
+# Python
+!*.py
+!*.pyi
+!*.ipynb
+!conftest.py
+!requirements.txt
+!pyproject.toml
+!setup.py
+!setup.cfg
+!uv.lock
+!poetry.lock
+!Pipfile
+!Pipfile.lock
+
+# LaTeX
+!*.tex
+!*.bib
+!*.sty
+!*.cls
+!*.bst
+
+# MATLAB
+!*.m
+
+# Shell
+!*.sh
+!Makefile
+
+# Config & Data
+!*.json
+!*.yaml
+!*.yml
+!*.toml
+!*.cfg
+!*.xml
+!*.csv
+!*.tsv
+
+# Markdown & Docs
+!*.md
+!*.rst
+!*.txt
+
+# 4. Whitelist Documentation & Config Directories (recursive)
+!docs/**
+!config/**
+!.github/**
+!.vscode/**
+!release/**
+
+# 5. Whitelist Images & Assets (commonly used in papers/projects)
+!*.png
+!*.jpg
+!*.jpeg
+!*.gif
+!*.svg
+!*.eps
+!*.tiff
+!*.tif
+!*.bmp
+
+# Note: All generated files, caches, and OS junk are automatically ignored
+# because they are not in the whitelist above.

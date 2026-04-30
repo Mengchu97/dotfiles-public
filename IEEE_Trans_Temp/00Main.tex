@@ -1,0 +1,69 @@
+\documentclass[letterpaper,journal]{IEEEtran}
+
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+
+\input{preamble/preamble}
+\input{preamble/letterfonts}
+\input{preamble/macros}
+\graphicspath{{./figs/}}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% updated with editorial comments 12/8/2023, 8/9/2021
+
+\begin{document}
+
+\title{A Sample Article Using IEEEtran.cls\\ for IEEE Journals and Transactions}
+
+\author{IEEE Publication Technology,~\IEEEmembership{Staff,~IEEE,}
+  % <-this % stops a space
+  \thanks{This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ.}% <-this % stops a space
+  \thanks{Manuscript received October 8, 2023; revised December 8, 2023.}}
+
+% The paper headers
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~1, No.~2, December~2023}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+\IEEEpubid{0000--0000~\copyright~2023 IEEE}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+\begin{abstract}
+  This document describes the most common article elements and how to use the IEEEtran class with \LaTeX \ to produce files that are suitable for submission to the IEEE.  IEEEtran can produce conference, journal, and technical note (correspondence) papers with a suitable choice of class options.
+\end{abstract}
+
+\input{01Introduction.tex}
+\input{02Preliminaries.tex}
+\input{03Results.tex}
+\input{04Proofs.tex}
+\input{05Discussion.tex}
+\input{06Experiments.tex}
+\input{07Conclusion.tex}
+\input{08Appendices.tex}
+
+
+\begin{IEEEkeywords}
+  Article submission, IEEE, IEEEtran, journal, \LaTeX, paper, template, typesetting.
+\end{IEEEkeywords}
+
+
+
+
+
+
+
+
+%{\appendices
+%\section*{Proof of the First Zonklar Equation}
+%Appendix one text goes here.
+% You can choose not to have a title for an appendix if you want by leaving the argument blank
+%\section*{Proof of the Second Zonklar Equation}
+%Appendix two text goes here.}
+
+% \bibliographystyle{IEEEtran}
+
+% \bibliography{bibs/main}
+
+\end{document}
+
+

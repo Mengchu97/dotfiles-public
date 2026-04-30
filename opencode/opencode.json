@@ -1,0 +1,27 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "oh-my-opencode-slim",
+    "@warp-dot-dev/opencode-warp"
+  ],
+  "mcp": {
+    "zotero": {
+      "type": "local",
+      "command": [
+        "node",
+        "-e",
+        "import(require('url').pathToFileURL(require('path').join(require('os').homedir(),'mcp-servers','ai-zotero-workflow','dist','index.js')).href)"
+      ]
+    }
+  },
+  "agent": {
+    "explore": {
+      "disable": true
+    },
+    "general": {
+      "disable": true
+    }
+  },
+  "lsp": true
+}

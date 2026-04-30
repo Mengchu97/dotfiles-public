@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# ================================================================= #
+#                Universal Bash Environment                         #
+# ================================================================= #
+# Shared environment-only Bash configuration. This file is sourced
+# by both the login path (.bash_profile) and the interactive path
+# (.bashrc) before any interactive-only guard runs.
+
+if [ -n "${_DOTFILES_BASH_ENV_LOADED:-}" ]; then
+    return 0
+fi
+_DOTFILES_BASH_ENV_LOADED=1
+
+path_prepend_once() {
+    local dir="$1"
+
+    [ -n "$dir" ] || return 0
+    [ -d "$dir" ] || return 0
+
+    case ":$PATH:" in
+        *":$dir:"*) ;;
+        *) PATH="$dir${PATH:+:$PATH}" ;;
+    esac
+}
+
+# Explicitly add MacTeX path on macOS when available.
+if [ -d "/Library/TeX/texbin" ]; then
+    path_prepend_once "/Library/TeX/texbin"
+fi
+
+path_prepend_once "$HOME/bin"
+path_prepend_once "$HOME/.local/bin"
+path_prepend_once "$HOME/.npm-global/bin"
+path_prepend_once "$HOME/.opencode/bin"
+
+# Source extra environment setup if available.
+if [ -f "$HOME/.local/bin/env" ]; then
+    . "$HOME/.local/bin/env"
+fi
+
+# FZF environment variables are safe in all shell modes.
+if command -v fd >/dev/null 2>&1; then
+    export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi
+
+# Machine-specific environment overrides live here.
+if [ -f "$HOME/.bash_env.local" ]; then
+    . "$HOME/.bash_env.local"
+fi
+
+unset -f path_prepend_once

@@ -1,0 +1,685 @@
+# ================================================================= #
+#                User Specific Aliases & Functions                  #
+#                                                                   #
+#  Custom configuration for consistent shell workflow.              #
+# ================================================================= #
+
+# --- Section 1: Dotfiles Management & Sync ---
+# -----------------------------------------------------------------
+
+# Push dotfiles updates
+dotpush() {
+    (
+        cd ~/.dotfiles || return
+        git add .
+        if git commit -m "${1:-update dotfiles}"; then
+            echo "🚀 Pushing changes..."
+            git push origin main
+        else
+            echo "✨ No changes to push."
+        fi
+    )
+}
+
+# Pull dotfiles updates and reload
+dotpull() {
+    (
+        cd ~/.dotfiles || return
+        git pull origin main
+    )
+    [ -f ~/.bashrc ] && source ~/.bashrc
+}
+
+# Ensure git include directive is present (self-healing if install.sh wasn't run)
+if [ -f ~/.gitconfig ] && [ -f ~/.dotfiles/git/gitconfig ]; then
+    if ! grep -q '# >>> dotfiles >>>' ~/.gitconfig 2>/dev/null; then
+        {
+            echo ""
+            echo "# >>> dotfiles >>>"
+            echo "[include]"
+            echo "    path = ~/.dotfiles/git/gitconfig"
+            echo "# <<< dotfiles <<<"
+        } >> ~/.gitconfig
+    fi
+fi
+
+# --- OpenCode Plugin Toggle (omo vs oms) ---
+# Tracks active mode via ~/.config/opencode/.oc-mode
+_oc_active_mode() {
+    local marker="$HOME/.config/opencode/.oc-mode"
+    if [ -f "$marker" ]; then cat "$marker"; else echo "oms"; fi
+}
+
+_oc_plugin_set() {
+    local mode="$1"
+    local f
+
+    # 1. Update opencode.json (Main plugins)
+    # Non-destructively swap oh-my-opencode-slim and oh-my-openagent@latest
+    for f in \
+        "$HOME/.config/opencode/opencode.json" \
+        "$HOME/.dotfiles/opencode/opencode.json"
+    do
+        [ -f "$f" ] || continue
+        if [ "$mode" = "omo" ]; then
+            # Replace slim with agent@latest
+            sed -i 's/oh-my-opencode-slim/oh-my-openagent@latest/g' "$f"
+        else
+            # Replace agent (with optional version) with slim
+            sed -i 's/oh-my-openagent\(@[^"]*\)\?/oh-my-opencode-slim/g' "$f"
+        fi
+    done
+
+    # 2. Update tui.json (TUI specific plugins)
+    for f in \
+        "$HOME/.config/opencode/tui.json" \
+        "$HOME/.dotfiles/opencode/tui.json"
+    do
+        [ -f "$f" ] || continue
+        if [ "$mode" = "oms" ]; then
+            # Ensure oh-my-opencode-slim is present
+            if grep -q "oh-my-openagent" "$f"; then
+                sed -i 's/oh-my-openagent\(@[^"]*\)\?/oh-my-opencode-slim/g' "$f"
+            elif ! grep -q "oh-my-opencode-slim" "$f"; then
+                if grep -q '^[[:space:]]*{[[:space:]]*}[[:space:]]*$' "$f"; then
+                    printf '{\n  "plugin": [\n    "oh-my-opencode-slim"\n  ]\n}\n' > "$f"
+                else
+                    # Add to existing plugin list
+                    sed -i '/"plugin": \[/a \    "oh-my-opencode-slim",' "$f"
+                fi
+            fi
+        else
+            # For omo mode, remove slim from TUI while preserving other plugins
+            # Pure bash (awk) logic to maintain JSON validity (comma handling)
+            awk '
+                !/oh-my-opencode-slim|oh-my-openagent/ { lines[++n] = $0 }
+                END {
+                    for (i = 1; i <= n; i++) {
+                        # Remove trailing comma if next line is a closing bracket
+                        if (lines[i] ~ /,[[:space:]]*$/ && lines[i+1] ~ /^[[:space:]]*\]/) {
+                            sub(/,[[:space:]]*$/, "", lines[i])
+                        }
+                        print lines[i]
+                    }
+                }
+            ' "$f" > "${f}.tmp" && mv "${f}.tmp" "$f"
+        fi
+    done
+
+    echo "$mode" > "$HOME/.config/opencode/.oc-mode"
+    local label="oh-my-openagent"
+    [ "$mode" = "oms" ] && label="oh-my-opencode-slim"
+    echo "✅ Enabled ${label} (restart opencode to apply)"
+}
+
+ocenable-omo() { _oc_plugin_set "omo"; }
+ocenable-oms() { _oc_plugin_set "oms"; }
+
+# --- OpenCode Profile Switcher ---
+# Tracks active profile via ~/.config/opencode/.omo-profile
+_omo_active_profile() {
+    local marker="$HOME/.config/opencode/.omo-profile"
+    if [ -f "$marker" ]; then cat "$marker"; else echo "unknown"; fi
+}
+
+_omo_switch() {
+    local profile="$1"
+    local src="$HOME/.dotfiles/opencode/oh-my-openagent-${profile}.json"
+    local tgt="$HOME/.config/opencode/oh-my-openagent.json"
+    local dotfile="$HOME/.dotfiles/opencode/oh-my-openagent.json"
+    if [ ! -f "$src" ]; then
+        echo "❌ Profile not found: $src"
+        return 1
+    fi
+    cp "$src" "$tgt"
+    cp "$src" "$dotfile"
+    echo "$profile" > "$HOME/.config/opencode/.omo-profile"
+    echo "✅ Switched to ${profile} profile (restart opencode to apply)"
+}
+
+omo-glm()     { _omo_switch "glm"; }
+omo-gpt()     { _omo_switch "gpt"; }
+omo-manual()  { _omo_switch "manual"; }
+omo-status()  {
+    local profile=$(_omo_active_profile)
+    echo "Active oh-my-openagent profile: ${profile}"
+}
+
+# --- OpenCode Slim (oh-my-opencode-slim) Profile Switcher ---
+# Tracks active profile via ~/.config/opencode/.oms-profile
+_oms_active_profile() {
+    local marker="$HOME/.config/opencode/.oms-profile"
+    if [ -f "$marker" ]; then cat "$marker"; else echo "unknown"; fi
+}
+
+_oms_switch() {
+    local profile="$1"
+    local src="$HOME/.dotfiles/opencode/oh-my-opencode-slim-${profile}.json"
+    local tgt="$HOME/.config/opencode/oh-my-opencode-slim.json"
+    local dotfile="$HOME/.dotfiles/opencode/oh-my-opencode-slim.json"
+    if [ ! -f "$src" ]; then
+        echo "❌ Profile not found: $src"
+        return 1
+    fi
+    cp "$src" "$tgt"
+    cp "$src" "$dotfile"
+    echo "$profile" > "$HOME/.config/opencode/.oms-profile"
+    echo "✅ Switched oh-my-opencode-slim to ${profile} profile (restart opencode to apply)"
+}
+
+oms-glm()     { _oms_switch "glm"; }
+oms-gpt()     { _oms_switch "gpt"; }
+oms-manual()  { _oms_switch "manual"; }
+oms-status()  {
+    local profile=$(_oms_active_profile)
+    echo "Active oh-my-opencode-slim profile: ${profile}"
+}
+
+# Auto-sync on shell load: restore last active profile
+if [ -d ~/.config/opencode ] && [ -d ~/.dotfiles/opencode ]; then
+    cmp -s ~/.dotfiles/opencode/opencode.json ~/.config/opencode/opencode.json 2>/dev/null || cp ~/.dotfiles/opencode/opencode.json ~/.config/opencode/opencode.json
+    cmp -s ~/.dotfiles/opencode/oh-my-openagent.json ~/.config/opencode/oh-my-openagent.json 2>/dev/null || cp ~/.dotfiles/opencode/oh-my-openagent.json ~/.config/opencode/oh-my-openagent.json
+    cmp -s ~/.dotfiles/opencode/oh-my-opencode-slim.json ~/.config/opencode/oh-my-opencode-slim.json 2>/dev/null || cp ~/.dotfiles/opencode/oh-my-opencode-slim.json ~/.config/opencode/oh-my-opencode-slim.json
+fi
+
+# --- Section 2: HPC & Cluster Resources (LSF / bsub) ---
+# -----------------------------------------------------------------
+
+# Internal helper for bsub requests
+# 参数: queue mem gpu_spec model_req threads slots
+#   slots: LSF job slot 数量 (GPU 命令 = GPU 数量, CPU 命令 = 线程数)
+_bsub_req() {
+    local q=$1 mem=$2 gpu_spec=$3 model_req=$4 threads=$5 slots=$6
+
+    local model_msg=""
+    if [ -n "$model_req" ]; then model_msg=" (Model: $model_req)"; fi
+
+    local thread_count=${threads:-4}
+    # GPU 命令: -n = GPU 数量; CPU 命令: -n = 线程数
+    local slot_count=${slots:-$thread_count}
+
+    echo "Requesting ${q} node: ${mem}GB RAM, ${thread_count} Threads, ${slot_count} Slots, ${gpu_spec:-No GPU}${model_msg}..."
+
+    bsub -q "$q" \
+         -n "${slot_count}" \
+         ${gpu_spec:+-gpu "$gpu_spec"} \
+         -R "rusage[mem=${mem}GB]" \
+         -R "affinity[thread*${thread_count}]" \
+         -R "hname!=ibdgxa01" \
+         ${model_req:+-R "select[$model_req]"} \
+         -Is /bin/bash
+}
+
+# 用法: cpuRequire [内存GB] [线程数]
+# 例子: cpuRequire 64 8  -> 64GB, 8线程, 8 slots (CPU = slots 跟线程走)
+cpuRequire()  { _bsub_req interactive ${1:-32} "" "" ${2:-4}; }
+
+# 用法: gpuRequire [内存GB] [线程数]
+# 例子: gpuRequire 80 8  -> 80GB, 8线程, 1 GPU, 1 slot
+gpuRequire()  { _bsub_req interactive-gpu ${1:-64} "num=1:j_exclusive=yes" "" ${2:-4} 1; }
+
+# 用法: gpuRequire2 [内存GB] [线程数]
+# 例子: gpuRequire2 128 16 -> 128GB, 16线程, 2 GPU, 2 slots
+gpuRequire2() { _bsub_req interactive-gpu ${1:-64} "num=2:j_exclusive=yes" "" ${2:-4} 2; }
+
+# 用法: gpuA100 [内存大小] [线程数]
+# 例子: gpuA100 80 2  -> 80GB, 2线程, 1 GPU, 1 slot
+gpuA100() {
+    _bsub_req interactive-gpu ${1:-80} "num=1:j_exclusive=yes" "gpumodel=='A100'" ${2:-4} 1
+}
+
+# 用法: gpuL40S [内存大小] [线程数]
+gpuL40S() {
+    _bsub_req interactive-gpu ${1:-64} "num=1:j_exclusive=yes" "gpumodel=='L40S'" ${2:-4} 1
+}
+
+# 快速在服务器启动 warp bash
+alias wbash='printf "\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash"}}\x9c"'
+
+# --- Section 3: Development Environments (Modules) ---
+# -----------------------------------------------------------------
+
+# MATLAB
+alias lml='module load matlab/R2025a'
+unalias mrun 2>/dev/null || true
+mrun() { matlab -nodesktop -nosplash -logfile "$(date +%Y%m%d_%H%M%S).log" -r "$@"; }
+
+# IDE & Remote Display
+# Use the last field of 'who am i' to determine the client IP for DISPLAY
+alias rdisp='export DISPLAY=$(who am i | awk "{print \$NF}" | tr -d "()"):0.0'
+alias lpc='module load PyCharm/2022.3.2 miniconda/23.10.0_libmamba_environmentally CUDA/11.7.0 cuDNN && rdisp'
+alias lvsc='module load vscode/1.94 code-server/4.16.1 miniconda/23.10.0_libmamba_environmentally CUDA/11.7.0 cuDNN && rdisp'
+
+# Python & UV
+# Unalias if it exists to avoid conflicts with function definition
+unalias upy 2>/dev/null || true
+
+upy() {
+    if [[ "$1" == *.py ]]; then
+        local target="$1"
+        [[ "$target" == ./* ]] && target="${target:2}"
+        local module="${target%.py}"
+        module="${module//\//.}"
+        echo "Auto-detected script, running as module: $module"
+        if ! uv run python -m "$module" "${@:2}"; then
+            echo "Module run failed, falling back to direct script execution..."
+            uv run python "$@"
+        fi
+    else
+        uv run python "$@"
+    fi
+}
+alias cdfl='source ~/PycharmProjects/CD_fattyliver/cdfl/bin/activate && module load CUDA/11.7.0 cuDNN'
+pydebug() {
+    local host="${PYDEBUG_HOST:-INPUT_YOUR_HPC_SERVER}"
+    local port="${PYDEBUG_PORT:-49661}"
+    uv run -m debugpy --connect "${host}:${port}" --wait-for-client "$@"
+}
+
+# 1. 定义一个变量来存储基础路径
+AG_BASE_DIR=""
+
+# 2. 判断操作系统并赋值
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    AG_BASE_DIR="$HOME/Library/Application Support"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux (通常建议放在 .config 下，或者你可以改为 $HOME)
+    AG_BASE_DIR="$HOME/.config"
+elif [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    # Windows (Git Bash / MinGW)
+    # Windows 下通常自带 APPDATA 环境变量，直接引用
+    AG_BASE_DIR="$APPDATA"
+else
+    # 未知系统，默认回退到 Home 目录
+    AG_BASE_DIR="$HOME"
+fi
+
+# 3. 设置 Alias (注意使用双引号以便解析变量)
+# agsync: 自动同步 (拉取+推送). 支持 --force 参数强制推送
+alias agsync="bash \"$AG_BASE_DIR/Antigravity/User/sync_antigravity.sh\""
+alias agpull="bash \"$AG_BASE_DIR/Antigravity/User/sync_antigravity.sh\" --pull"
+alias agpush="bash \"$AG_BASE_DIR/Antigravity/User/sync_antigravity.sh\" --push"
+# agforce: 强制推送 (用于当插件列表变化过大被拦截时)
+alias agforce="bash \"$AG_BASE_DIR/Antigravity/User/sync_antigravity.sh\" --push --force"
+
+
+# function antigravity() {
+#     # 1. 设置核心路径 (根据你确认过的路径)
+#     # 注意：如果未来软件更新导致路径变了，这里可能要微调
+#     local APP_BASE="/Applications/Antigravity.app"
+#     local ELECTRON_BIN="$APP_BASE/Contents/MacOS/Electron"
+#     local CLI_SCRIPT="$APP_BASE/Contents/Resources/app/out/cli.js"
+
+#     # 2. 检查文件是否存在，防止报错
+#     if [[ ! -f "$ELECTRON_BIN" ]] || [[ ! -f "$CLI_SCRIPT" ]]; then
+#         echo "Error: 找不到 Antigravity 的核心文件。"
+#         echo "尝试使用 open 命令作为备选..."
+#         open -a "Antigravity" --args "$@"
+#         return
+#     fi
+
+#     # 3. 关键：设置环境变量，告诉 Electron 这是一个命令行操作，不要启动 GUI
+#     # 这样它就会像 'code' 命令一样，去连接已经打开的主程序
+#     export ELECTRON_RUN_AS_NODE=1
+
+#     # 4. 执行命令
+#     "$ELECTRON_BIN" "$CLI_SCRIPT" "$@"
+
+#     # 5. 运行完清理变量
+#     unset ELECTRON_RUN_AS_NODE
+# }
+
+# Project Initialization
+uvnew() {
+    [ -d ".git" ] || { echo "▶️ Git init..."; git init; [ -f ".gitignore" ] || printf ".venv/\n__pycache__/\n*.pyc\n" > .gitignore; }
+    echo "▶️ UV init & venv..."
+    uv init && uv venv
+    echo "✅ Done. Use 'code .' to start."
+}
+
+# Scaffold new IEEE Project
+newieee() {
+    if [ -z "$1" ]; then
+        echo "Usage: newieee <directory_name>"
+        return 1
+    fi
+
+    if [ -d "$1" ]; then
+        echo "Error: Directory '$1' already exists."
+        return 1
+    fi
+
+    echo "▶️ Creating IEEE Project in '$1'..."
+    mkdir -p "$1"
+
+    # Copy template (excluding .git metadata of the dotfiles repo itself,
+    # though we are copying FROM a subfolder so standard cp -r works fine.
+    # We filter out .git folder if it happened to be inside the template, but usually it's not)
+    cp -r ~/.dotfiles/IEEE_Trans_Temp/. "$1/"
+
+    cd "$1" || return
+
+    # Initialize Git with Blacklist Mode (Standard for scaffolded projects)
+    echo "▶️ Initializing Git (Blacklist Mode)..."
+    git bn
+
+    echo "▶️ Adding Bibs..."
+    git submodule add INPUT_YOUR_BIB_REPO_URL bibs
+
+}
+
+
+# Python Virtual Env Activation
+activate() {
+    local venv_name="."
+    local venv_path=""
+
+    if [ -n "$1" ]; then
+        venv_name="$1"
+    fi
+
+    # Search for the virtual environment
+    if [[ "$venv_name" == "." || "$venv_name" == "venv" || "$venv_name" == ".venv" ]]; then
+        if [ -d "./.venv" ]; then venv_path="./.venv";
+        elif [ -d "./venv" ]; then venv_path="./venv"; fi
+    else
+        if [ -d "$HOME/envs/$venv_name" ]; then venv_path="$HOME/envs/$venv_name";
+        elif [ -d "$HOME/.virtualenvs/$venv_name" ]; then venv_path="$HOME/.virtualenvs/$venv_name";
+        elif [ -d "./$venv_name" ]; then venv_path="./$venv_name"; fi
+    fi
+
+    # Detect activation script (compatibility: Linux/macOS uses 'bin', Windows uses 'Scripts')
+    local act_script=""
+    if [ -n "$venv_path" ]; then
+        if [ -f "$venv_path/bin/activate" ]; then act_script="$venv_path/bin/activate"
+        elif [ -f "$venv_path/Scripts/activate" ]; then act_script="$venv_path/Scripts/activate"
+        fi
+    fi
+
+    # Activate
+    if [ -n "$act_script" ]; then
+        printf "Activating virtual environment '\e[36m%s\e[0m'...\n" "$(basename "$venv_path")"
+        source "$act_script"
+
+        # Extra project env (Mitsuba example)
+        if [[ "$venv_path" == "./.venv" || "$venv_path" == "./venv" ]]; then
+            local extra_env="$(pwd)/external/mitsuba/build/setpath.sh"
+            if [ -f "$extra_env" ]; then
+                echo "Loading Mitsuba environment from $extra_env"
+                . "$extra_env"
+            fi
+        fi
+    else
+        printf "\e[31mError:\e[0m Could not find virtual environment '%s'.\n" "$venv_name"
+        return 1
+    fi
+}
+
+
+# --- Section 4: System & Network Tools ---
+# -----------------------------------------------------------------
+
+# Proxy Management
+proxy_on() {
+    export all_proxy="socks5://127.0.0.1:12334" http_proxy="http://127.0.0.1:12334" https_proxy="http://127.0.0.1:12334"
+    echo "✅ Proxy ON (12334)"
+}
+proxy_off() {
+    unset all_proxy http_proxy https_proxy
+    echo "❌ Proxy OFF"
+}
+
+# Tmux Management
+alias mltm='module load tmux'
+alias tmls='tmux ls'
+alias tmk='tmux kill-session -t'
+tmn () {
+    [ -z "$1" ] && { echo "Usage: tmn <name>"; return 1; }
+    tmux has-session -t "$1" 2>/dev/null && tmux attach -t "$1" || tmux new -s "$1"
+}
+
+# Jupyter Utils
+sjn() {
+    local port=$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()')
+    echo "Jupyter starts on: http://localhost:$port"
+    jupyter notebook --port=$port
+}
+
+jjn() {
+    local suffix=${1:-""}
+    local script="~/run_jupyter${suffix:+_$suffix}.lsf"
+    bsub < "$script"
+}
+
+# Network Info
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    alias ports='lsof -i -P -n | grep LISTEN'
+else
+    alias ports='netstat -tulpn | grep LISTEN'
+fi
+alias myip='curl -s ifconfig.me || curl -s ipinfo.io/ip'
+alias pingg='ping -c 4 8.8.8.8'
+
+# System Monitoring
+alias df='df -h'
+alias du='du -h'
+if ! [[ "$OSTYPE" == "darwin"* ]]; then
+    alias free='free -h'  # macOS doesn't have free
+fi
+psg() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: psg <pattern>"
+        return 1
+    fi
+    ps aux | grep -v grep | grep -i -e VSZ -e "$@"
+}
+
+# System Administration
+alias reload='source ~/.bashrc && echo "Shell configuration reloaded."'
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+update() {
+    if ! sudo -n true 2>/dev/null; then
+        echo "Authentication required for update."
+    fi
+    if command -v apt-get &> /dev/null; then sudo apt-get update && sudo apt-get upgrade -y
+    elif command -v dnf &> /dev/null; then sudo dnf check-update && sudo dnf upgrade -y
+    elif command -v yum &> /dev/null; then sudo yum check-update && sudo yum upgrade -y
+    elif command -v brew &> /dev/null; then brew update && brew upgrade
+    else echo "No supported package manager found."; return 1; fi
+}
+
+
+# --- Section 5: File & Directory Operations ---
+# -----------------------------------------------------------------
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias l='ls -CF'
+alias la='ls -A'
+alias ll='ls -alF'
+
+# Modern Navigation & Listing
+# Use 'z' (zoxide) if available, fallback to autojump 'j', or nothing
+if command -v zoxide &> /dev/null; then
+    eval "$(zoxide init bash)"
+    alias cd='z'
+elif command -v autojump &> /dev/null; then
+    . /usr/share/autojump/autojump.sh
+    alias j='autojump'
+fi
+
+# Use 'eza' or 'lsd' if available for ls
+if command -v eza &> /dev/null; then
+    alias ls='eza --icons --group-directories-first'
+    alias ll='eza -alF --icons --group-directories-first'
+    alias la='eza -a --icons --group-directories-first'
+    alias l='eza -F --icons --group-directories-first'
+    alias tree='eza --tree --icons'
+elif command -v lsd &> /dev/null; then
+    alias ls='lsd'
+    alias ll='lsd -alF'
+    alias la='lsd -a'
+    alias l='lsd -F'
+    alias tree='lsd --tree'
+fi
+
+# Safety (Interactive Prompt)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    alias rm='rm -i'      # macOS rm doesn't support -I
+else
+    alias rm='rm -I'
+fi
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Improved Grep
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Quick Utils
+mkcd() { mkdir -p "$1" && cd "$1"; }
+bak() { cp "$1" "${1}_$(date +%Y%m%d_%H%M%S).bak"; }
+
+# Universal Extractor
+extract() {
+    if [ -f "$1" ] ; then
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1"     ;;
+            *.tar.gz)    tar xzf "$1"     ;;
+            *.bz2)       bunzip2 "$1"     ;;
+            *.rar)       unrar x "$1"     ;;
+            *.gz)        gunzip "$1"      ;;
+            *.tar)       tar xf "$1"      ;;
+            *.tbz2)      tar xjf "$1"     ;;
+            *.tgz)       tar xzf "$1"     ;;
+            *.zip)       unzip "$1"       ;;
+            *.Z)         uncompress "$1"  ;;
+            *.7z)        7z x "$1"        ;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+
+# --- Section 6: Git Aliases ---
+# -----------------------------------------------------------------
+if command -v git &> /dev/null; then
+    alias g='git'
+    alias gi='git init'
+    alias gs='git status -s'
+    alias ga='git add'
+    alias gaa='git add -A'
+    alias gc='git commit -m'
+    alias gca='git commit -a -m'
+    alias gpl='git pull --prune --tags'
+    alias gps='git push --follow-tags'
+    alias gl='git log --oneline --graph --decorate --all'
+
+    # Extended Git Aliases
+    alias gd='git diff'
+    alias gco='git checkout'
+    alias gb='git branch'
+    alias gst='git status'
+    alias gcp='git cherry-pick'
+    alias gr='git remote'
+    alias grv='git remote -v'
+    alias gcstat='git log --oneline | wc -l'
+fi
+
+wtclone ()
+{
+    local wtree_input="${1:?Usage: wtclone <worktree_dir> [branch]}";
+    local branch="$2";
+    local wtree repo rel_path src dst dst_dir;
+
+    wtree="$(python3 -c "import os,sys; print(os.path.abspath(sys.argv[1]))" "$wtree_input")";
+
+    repo="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+        echo "Error: not inside a git repo";
+        return 1;
+    };
+
+    if [ ! -d "$wtree" ]; then
+        git -C "$repo" worktree add "$wtree" ${branch:+"$branch"} || return 1;
+    else
+        echo "Note: $wtree already exists, skipping worktree creation";
+    fi;
+
+    echo "Symlinking gitignored items: $repo → $wtree";
+
+    # Collect linked paths for .gitignore injection
+    local linked_paths=();
+
+    while IFS= read -r rel_path; do
+        rel_path="${rel_path%/}"
+
+        case "$rel_path" in
+            __pycache__/*|*.pyc|*.pyo|.pytest_cache/*|.mypy_cache/*)
+                continue
+                ;;
+        esac
+
+        src="$repo/$rel_path"
+        dst="$wtree/$rel_path"
+        dst_dir="$(dirname "$dst")"
+
+        [ -e "$src" ] || continue
+        [ -d "$dst_dir" ] || mkdir -p "$dst_dir"
+
+        if [ ! -e "$dst" ] && [ ! -L "$dst" ]; then
+            ln -s "$src" "$dst" \
+                && echo "  Linked:  $rel_path" \
+                || echo "  Warning: failed $rel_path"
+            # Record for .gitignore (strip trailing slashes for matching)
+            linked_paths+=("$rel_path")
+        else
+            echo "  Skip:    $rel_path"
+        fi
+
+    done < <(git -C "$repo" ls-files --others --ignored --exclude-standard --directory);
+
+    # Ensure symlinks are ignored in the worktree's .gitignore
+    # (symlinks to directories are treated as files by git, so patterns
+    #  like ".venv/" with trailing slash won't match them)
+    if [ ${#linked_paths[@]} -gt 0 ]; then
+        local wt_gitignore="$wtree/.gitignore"
+        local needs_newline=""
+        # $(...) strips trailing newlines, so when file ends with \n the
+        # result is empty → != "" is false → no extra newline needed.
+        if [ -f "$wt_gitignore" ] && [ -s "$wt_gitignore" ] && [ "$(tail -c1 "$wt_gitignore")" != "" ]; then
+            needs_newline=$'\n'
+        fi
+        {
+            echo "${needs_newline}# --- wtclone symlinks (auto-generated) ---"
+            for p in "${linked_paths[@]}"; do
+                echo "$p"
+            done
+        } >> "$wt_gitignore"
+        echo "  Updated .gitignore with ${#linked_paths[@]} symlink(s)"
+    fi
+
+    echo "Done."
+}
+
+# Gemini CLI
+gresume() {
+    if [ -z "$1" ]; then
+        echo "Usage: gresume <session-id>" >&2
+        return 1
+    fi
+
+    local project_id=$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr '_' '-')
+    local root_file="$HOME/.gemini/tmp/$project_id/.project_root"
+
+    mkdir -p "$(dirname "$root_file")"
+    echo -n "$PWD" > "$root_file"
+    gemini --resume "$@"
+}
+alias glatest='gemini --resume latest'

@@ -1,0 +1,80 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 1. 常用数学符号简写
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 希腊字母与常用符
+\newcommand{\eps}{\epsilon}
+\newcommand{\veps}{\varepsilon}
+\newcommand{\lm}{\lambda}
+\newcommand{\bs}[1]{\boldsymbol{#1}} % 粗体数学符号
+\newcommand{\exs}{\exists}
+
+% 括号与大小控制
+\newcommand{\lt}{\left}
+\newcommand{\rt}{\right}
+\newcommand{\st}{\strut}           % 用于支撑行高
+\newcommand{\dps}[1]{\displaystyle{#1}}
+
+% 旋转符号 (用于图表或特殊表示)
+\newcommand{\uin}{\mathbin{\rotatebox[origin=c]{90}{$\in$}}}
+\newcommand{\usubset}{\mathbin{\rotatebox[origin=c]{90}{$\subset$}}}
+
+% 文本缩写
+\newcommand{\iid}{\textit{i.i.d.\ }} % 独立同分布，注意末尾空格
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 2. 数学算子 (Operator) - 自动处理间距
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 使用 DeclareMathOperator 可以在算子和变量间自动加空格
+\DeclareMathOperator{\lub}{\text{lub}}
+\DeclareMathOperator{\id}{\text{id}}
+
+% 范数 Norm (依赖 mathtools)
+% 用法: \norm{x} 或 \norm*{x} (自动调整大小)
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\newcommand{\inorm}{\norm[\infty]} % 无穷范数
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3. 微积分与导数
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 偏导数 (Partial Derivatives)
+\newcommand{\del}[2]{\frac{\partial #1}{\partial #2}}
+% 修正：高阶导数分母通常是 \partial x^n
+\newcommand{\Del}[3]{\frac{\partial^{#1} #2}{\partial #3^{#1}}}
+
+% Display style 偏导数 (使用 \dfrac)
+\newcommand{\deld}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\Deld}[3]{\dfrac{\partial^{#1} #2}{\partial #3^{#1}}}
+
+% 常微分 (Ordinary Derivatives)
+\newcommand{\der}[2]{\frac{\mathrm{d} #1}{\mathrm{d} #2}}
+\newcommand{\ddd}[3]{\frac{\mathrm{d}^{#3} #1}{\mathrm{d} #2^{#3}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 4. 集合与拓扑专用
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\opensets}{\{V_{\alpha}\}_{\alpha\in I}}
+\newcommand{\oset}{V_{\alpha}}
+\newcommand{\opset}[1]{V_{\alpha_{#1}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 5. 格式化与解题环境
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 段落缩进控制
+\newcommand{\parinn}{\setlength{\parindent}{1cm}}
+\newcommand{\parinf}{\setlength{\parindent}{0cm}}
+
+% 解题格式
+% 注意：建议改用 tcolorbox 或 proof 环境，但保留此命令以兼容旧习惯
+\newcommand{\Qed}{\hfill\qed} % 简化了原本的 flushright
+
+\newcommand{\sol}{%
+    \par\setlength{\parindent}{0cm}%
+    \textbf{\textit{Solution:}}\space%
+    \setlength{\parindent}{1cm}%
+}
+
+\newcommand{\solve}[1]{%
+    \par\setlength{\parindent}{0cm}%
+    \textbf{\textit{Solution: }}\space%
+    \setlength{\parindent}{1cm}#1 \Qed%
+}

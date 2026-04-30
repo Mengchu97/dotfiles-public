@@ -1,0 +1,97 @@
+%\usepackage[tmargin=2cm,rmargin=1in,lmargin=1in,margin=0.85in,bmargin=2cm,footskip=.2in]{geometry}
+\usepackage{amsmath,amsfonts,amsthm,amssymb,mathtools}
+%\usepackage[varbb]{newpxmath} % Conflict with newtx
+
+\usepackage{microtype}
+\usepackage{xfrac}
+\usepackage[makeroom]{cancel}
+\usepackage{mathtools}
+\usepackage{bookmark}
+\usepackage{enumitem}
+\usepackage{theoremref}
+%\usepackage[dvipsnames]{xcolor} % For more predefined color names like NavyBlue, ForestGreen, etc.
+\usepackage{hyperref}
+\setcounter{tocdepth}{1}
+
+
+\usepackage[most,many,breakable]{tcolorbox}
+\usepackage{varwidth}
+\usepackage{varwidth}
+\usepackage{etoolbox}
+%\usepackage{authblk}
+\usepackage{nameref}
+\usepackage{multicol,array}
+\usepackage{algorithm,algorithmic}
+%\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{comment} % enables the use of multi-line comments (\ifx \fi)
+\usepackage{import}
+\usepackage{xifthen}
+\usepackage{pdfpages}
+\usepackage{transparent}
+\usepackage{chngcntr}
+\usepackage{tikz}
+\usepackage{titletoc}
+
+\usepackage{cleveref}
+
+\usepackage{empheq}
+
+
+%\usepackage{import}
+%\usepackage{xifthen}
+%\usepackage{pdfpages}
+%\usepackage{transparent}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SELF MADE COLORS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\definecolor{doc}{RGB}{0,60,110}
+\definecolor{myg}{RGB}{56, 140, 70}
+\definecolor{myb}{RGB}{45, 111, 177}
+\definecolor{myr}{RGB}{199, 68, 64}
+\definecolor{mytheorembg}{HTML}{F2F2F9}
+\definecolor{mytheoremfr}{HTML}{00007B}
+\definecolor{mylemmabg}{HTML}{FFFAF8}
+\definecolor{mylemmafr}{HTML}{983b0f}
+\definecolor{mypropbg}{HTML}{f2fbfc}
+\definecolor{mypropfr}{HTML}{191971}
+\definecolor{myexamplebg}{HTML}{F2FBF8}
+\definecolor{myexamplefr}{HTML}{88D6D1}
+\definecolor{myexampleti}{HTML}{2A7F7F}
+\definecolor{mydefinitbg}{HTML}{E5E5FF}
+\definecolor{mydefinitfr}{HTML}{3F3FA3}
+\definecolor{notesgreen}{RGB}{0,162,0}
+\definecolor{myp}{RGB}{197, 92, 212}
+\definecolor{mygr}{HTML}{2C3338}
+\definecolor{myred}{RGB}{127,0,0}
+\definecolor{DodgerBlue}{RGB}{30, 144, 255}
+\definecolor{myyellow}{RGB}{169,121,69}
+\definecolor{myexercisebg}{HTML}{F2FBF8}
+\definecolor{myexercisefg}{HTML}{88D6D1}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=myr,  % Internal links (eq, sec, etc.)
+    citecolor=myg,  % Bibliography citations
+    urlcolor=myb,   % External URLs
+    breaklinks=true,
+    bookmarksnumbered=true,
+    bookmarksopen=true,
+    pdfdisplaydoctitle=true,
+    pdfstartview={FitH},
+    pdfpagemode=UseOutlines,
+    unicode=true
+}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\dblue}[1]{\textcolor{DodgerBlue}{#1}}
+\newcommand{\green}[1]{\textcolor{green}{#1}}
+
+\newcommand{\boxedeq}[2]{%
+    \begin{empheq}[box=\fcolorbox{red}{white}]{equation}%
+        #2\label{#1}
+    \end{empheq}%
+}

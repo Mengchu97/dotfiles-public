@@ -1,0 +1,53 @@
+{
+  "$schema": "https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json",
+  "preset": "glm",
+  "disabled_agents": ["council"],
+  "presets": {
+    "glm": {
+      "orchestrator": {
+        "model": "zai/glm-5.1",
+        "skills": ["*"],
+        "mcps": ["*", "!context7"]
+      },
+      "oracle": {
+        "model": "zai/glm-5.1",
+        "skills": ["simplify"],
+        "mcps": []
+      },
+      "council": {
+        "model": "zai/glm-5.1",
+        "skills": [],
+        "mcps": []
+      },
+      "librarian": {
+        "model": "zai/glm-5.1",
+        "skills": [],
+        "mcps": ["websearch", "context7", "grep_app"]
+      },
+      "explorer": {
+        "model": "zai/glm-5.1",
+        "skills": [],
+        "mcps": []
+      },
+      "designer": {
+        "model": "zai/glm-5.1",
+        "skills": ["agent-browser"],
+        "mcps": []
+      },
+      "fixer": {
+        "model": "zai/glm-5.1",
+        "skills": [],
+        "mcps": []
+      }
+    }
+  },
+  "council": {
+    "presets": {
+      "default": {
+        "councillors": [
+          { "model": "zai/glm-5.1", "variant": "high" }
+        ]
+      }
+    }
+  }
+}

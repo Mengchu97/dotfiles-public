@@ -1,0 +1,137 @@
+[init]
+    defaultBranch = main
+[core]
+	excludesfile = ~/.dotfiles/git/gitignore_blacklist
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[user]
+	name = INPUT_YOUR_NAME
+	email = INPUT_YOUR_EMAIL
+[credential "https://git.overleaf.com"]
+	provider = generic
+[fetch]
+  prune = true
+[alias]
+    # bn: Blacklist mode
+    bn = "!f() { \
+      if [ -e .git ]; then \
+        echo \"Error: This directory is already a Git repository.\"; \
+        return 1; \
+      fi; \
+      if [ ! -f ~/.dotfiles/git/gitignore_blacklist ]; then \
+        echo \"Error: ~/.dotfiles/git/gitignore_blacklist not found.\"; \
+        return 1; \
+      fi; \
+      git init && \
+      git branch -M main && \
+      cp ~/.dotfiles/git/gitignore_blacklist ./.gitignore && \
+      echo \"Repository initialized with BLACKLIST mode (main branch).\"; \
+      git add .gitignore; \
+      git commit -m \"feat: Init repo with blacklist gitignore\"; \
+    }; f"
+
+    # wn: Whitelist mode
+    wn = "!f() { \
+      if [ -e .git ]; then \
+        echo \"Error: This directory is already a Git repository.\"; \
+        return 1; \
+      fi; \
+      if [ ! -f ~/.dotfiles/git/gitignore_whitelist ]; then \
+        echo \"Error: ~/.dotfiles/git/gitignore_whitelist not found.\"; \
+        return 1; \
+      fi; \
+      git init && \
+      git branch -M main && \
+      cp ~/.dotfiles/git/gitignore_whitelist ./.gitignore && \
+      echo \"Repository initialized with WHITELIST mode (main branch).\"; \
+      git add .gitignore; \
+      git commit -m \"feat: Init repo with whitelist gitignore\"; \
+    }; f"
+
+    # addbib 保持不变即可，因为它不涉及分支创建
+    addbib = "!f() { \
+    url=\"INPUT_YOUR_BIB_REPO_URL\"; \
+    path=\"bibs\"; \
+    if [[ \"$1\" == http* ]] || [[ \"$1\" == git@* ]]; then \
+        url=\"$1\"; \
+        path=\"${2:-bibs}\"; \
+    elif [ -n \"$1\" ]; then \
+        path=\"$1\"; \
+    fi; \
+    echo \"🔗 Adding submodule from: $url\"; \
+    echo \"📂 Target folder: $path\"; \
+    git submodule add \"$url\" \"$path\"; \
+    }; f"
+    checkall = "!f() { \
+        cd \"${GIT_PREFIX:-.}\"; \
+        find . -maxdepth 2 -name '.git' -type d | while read -r gitdir; do \
+            repo_dir=$(dirname \"$gitdir\"); \
+            if (cd \"$repo_dir\" && git rev-parse HEAD >/dev/null 2>&1); then \
+                echo \"✅ $repo_dir \"; \
+            else \
+                echo \"❌ $repo_dir [索引损坏]\"; \
+            fi; \
+        done; \
+    }; f"
+    pushall = "!f() { \
+        cd \"${GIT_PREFIX:-.}\"; \
+        find . -maxdepth 2 -name '.git' -type d | while read -r gitdir; do \
+            d=$(dirname \"$gitdir\"); \
+            [ \"$d\" = \".\" ] && continue; \
+            remote=\"origin\"; \
+            if git -C \"$d\" remote | grep -q '^github$'; then \
+                remote=\"github\"; \
+            fi; \
+            \
+            curr_br=$(git -C \"$d\" branch --show-current); \
+            echo \"🚀 Pushing $d to $remote ($curr_br)...\"; \
+            git -C \"$d\" push $remote \"$curr_br\" --follow-tags; \
+        done; \
+    }; f"
+    # 自动进入每个子目录，如果是仓库则执行拉取更新
+    pullall = "!f() { \
+        cd \"${GIT_PREFIX:-.}\"; \
+        find . -maxdepth 2 -name '.git' -type d | while read -r gitdir; do \
+            d=$(dirname \"$gitdir\"); \
+            [ \"$d\" = \".\" ] && continue; \
+            remote=\"origin\"; \
+            if git -C \"$d\" remote | grep -q '^github$'; then \
+                remote=\"github\"; \
+            fi; \
+            \
+            curr_br=$(git -C \"$d\" branch --show-current); \
+            echo \"📥 Pulling $d from $remote ($curr_br)...\"; \
+            git -C \"$d\" pull $remote \"$curr_br\" --prune; \
+            git -C \"$d\" submodule update --init --recursive; \
+        done; \
+    }; f"
+    stall = "!f() { \
+        cd \"${GIT_PREFIX:-.}\"; \
+        find . -maxdepth 2 -name '.git' -type d | while read -r gitdir; do \
+            d=$(dirname \"$gitdir\"); \
+            [ \"$d\" = \".\" ] && continue; \
+            status=$(cd \"$d\" && git status --short); \
+            if [ -n \"$status\" ]; then \
+                echo \"⚠️  $d has uncommitted changes\"; \
+            else \
+                echo \"✅ $d is clean\"; \
+            fi; \
+        done; \
+    }; f"
+    gcall = "!f() { \
+        cd \"${GIT_PREFIX:-.}\"; \
+        find . -maxdepth 2 -name '.git' -type d | while read -r gitdir; do \
+            d=$(dirname \"$gitdir\"); \
+            [ \"$d\" = \".\" ] && continue; \
+            echo \"🧹 Running git gc in $d...\"; \
+            git -C \"$d\" gc; \
+        done; \
+    }; f"
+    sync = submodule update --init --recursive
+    pullall-rec = "!git pull && git submodule update --init --recursive"
+
+[credential]
+        helper = store
