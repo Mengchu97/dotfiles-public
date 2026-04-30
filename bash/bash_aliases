@@ -154,17 +154,19 @@ _oms_active_profile() {
 
 _oms_switch() {
     local profile="$1"
-    local src="$HOME/.dotfiles/opencode/oh-my-opencode-slim-${profile}.json"
-    local tgt="$HOME/.config/opencode/oh-my-opencode-slim.json"
     local dotfile="$HOME/.dotfiles/opencode/oh-my-opencode-slim.json"
-    if [ ! -f "$src" ]; then
-        echo "❌ Profile not found: $src"
+    local tgt="$HOME/.config/opencode/oh-my-opencode-slim.json"
+    if [ ! -f "$dotfile" ]; then
+        echo "❌ Config not found: $dotfile"
         return 1
     fi
-    cp "$src" "$tgt"
-    cp "$src" "$dotfile"
+    # Both presets live in the same file now — just flip the active preset field
+    sed -i '' "s/\"preset\": \"[^\"]*\"/\"preset\": \"${profile}\"/" "$dotfile"
+    cp "$dotfile" "$tgt"
     echo "$profile" > "$HOME/.config/opencode/.oms-profile"
-    echo "✅ Switched oh-my-opencode-slim to ${profile} profile (restart opencode to apply)"
+    echo "✅ Switched to ${profile} preset"
+    echo "   In a running session: /preset ${profile}"
+    echo "   After restart: preset auto-applies from config"
 }
 
 oms-glm()     { _oms_switch "glm"; }

@@ -5,37 +5,71 @@
   "presets": {
     "glm": {
       "orchestrator": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
         "skills": ["*"],
         "mcps": ["*", "!context7"]
       },
       "oracle": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
         "skills": ["simplify"],
         "mcps": []
       },
       "council": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
         "skills": [],
         "mcps": []
       },
       "librarian": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
         "skills": [],
         "mcps": ["websearch", "context7", "grep_app"]
       },
       "explorer": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
         "skills": [],
         "mcps": []
       },
       "designer": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
         "skills": ["agent-browser"],
         "mcps": []
       },
       "fixer": {
-        "model": "zai/glm-5.1",
+        "model": "zai-coding-plan/glm-5.1",
+        "skills": [],
+        "mcps": []
+      }
+    },
+    "gpt": {
+      "orchestrator": {
+        "model": "openai/gpt-5.5",
+        "skills": ["*"],
+        "mcps": ["*", "!context7"]
+      },
+      "oracle": {
+        "model": "openai/gpt-5.5",
+        "variant": "xhigh",
+        "skills": ["simplify"],
+        "mcps": []
+      },
+      "librarian": {
+        "model": "zai-coding-plan/glm-5.1",
+        "skills": [],
+        "mcps": ["websearch", "context7", "grep_app"]
+      },
+      "explorer": {
+        "model": "zai-coding-plan/glm-5.1",
+        "skills": [],
+        "mcps": []
+      },
+      "designer": {
+        "model": "openai/gpt-5.5",
+        "variant": "xhigh",
+        "skills": ["agent-browser"],
+        "mcps": []
+      },
+      "fixer": {
+        "model": "zai-coding-plan/glm-5.1",
         "skills": [],
         "mcps": []
       }
@@ -44,9 +78,7 @@
   "council": {
     "presets": {
       "default": {
-        "councillors": [
-          { "model": "zai/glm-5.1", "variant": "high" }
-        ]
+        "glm": { "model": "zai-coding-plan/glm-5.1", "variant": "high" }
       }
     }
   }
