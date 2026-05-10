@@ -63,10 +63,18 @@ _oc_plugin_set() {
         [ -f "$f" ] || continue
         if [ "$mode" = "omo" ]; then
             # Replace slim with agent@latest
+            if [[ "$(uname -s)" == "Darwin" ]]; then
+                sed -i '' 's/oh-my-opencode-slim/oh-my-openagent@latest/g' "$f"
+            else
             sed -i 's/oh-my-opencode-slim/oh-my-openagent@latest/g' "$f"
+            fi
         else
             # Replace agent (with optional version) with slim
+            if [[ "$(uname -s)" == "Darwin" ]]; then
+                sed -i '' 's/oh-my-openagent\(@[^"]*\)\?/oh-my-opencode-slim/g' "$f"
+            else
             sed -i 's/oh-my-openagent\(@[^"]*\)\?/oh-my-opencode-slim/g' "$f"
+            fi
         fi
     done
 
@@ -79,13 +87,22 @@ _oc_plugin_set() {
         if [ "$mode" = "oms" ]; then
             # Ensure oh-my-opencode-slim is present
             if grep -q "oh-my-openagent" "$f"; then
+                if [[ "$(uname -s)" == "Darwin" ]]; then
+                    sed -i '' 's/oh-my-openagent\(@[^"]*\)\?/oh-my-opencode-slim/g' "$f"
+                else
                 sed -i 's/oh-my-openagent\(@[^"]*\)\?/oh-my-opencode-slim/g' "$f"
+                fi
             elif ! grep -q "oh-my-opencode-slim" "$f"; then
                 if grep -q '^[[:space:]]*{[[:space:]]*}[[:space:]]*$' "$f"; then
                     printf '{\n  "plugin": [\n    "oh-my-opencode-slim"\n  ]\n}\n' > "$f"
                 else
                     # Add to existing plugin list
+                    if [[ "$(uname -s)" == "Darwin" ]]; then
+                        sed -i '' -e '/"plugin": \[/a\
+                        "oh-my-opencode-slim",' "$f"
+                    else
                     sed -i '/"plugin": \[/a \    "oh-my-opencode-slim",' "$f"
+                    fi
                 fi
             fi
         else
