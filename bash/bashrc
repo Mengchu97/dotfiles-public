@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# ================================================================= #
+#                Universal .bashrc Configuration                    #
+#                                                                   #
+#  A robust, portable, and well-organized .bashrc file designed     #
+#  for consistent shell experience across multiple machines.         #
+#                                                                   #
+#                Version: 2.4            #
+# ================================================================= #
+
+# --- Section 0: Shared Environment ---
+# -----------------------------------------------------------------
+if [ -f "$HOME/.dotfiles/bash/bash_env" ]; then
+    . "$HOME/.dotfiles/bash/bash_env"
+fi
+
+# --- Section 1: Interactive Guard ---
+# -----------------------------------------------------------------
+# Do not execute interactive-only configuration if the shell is not interactive.
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+
+# Check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+# We check the bash version to avoid errors on older systems (like default macOS bash).
+if ((BASH_VERSINFO[0] >= 4)); then
+    shopt -s globstar
+fi
+
+
+# --- Section 2: History Control ---
+# -----------------------------------------------------------------
+# Don't put duplicate lines or lines starting with space in the history.
+HISTCONTROL=ignoreboth
+
+# Append to the history file, don't overwrite it.
+shopt -s histappend
+
+# Set a larger history size.
+HISTSIZE=10000
+HISTFILESIZE=20000
+# Append timestamp to history
+HISTTIMEFORMAT="%F %T "
+
+
+# --- Section 3: Prompt Customization (Oh My Posh) ---
+# -----------------------------------------------------------------
+# Oh My Posh prompt engine. Falls back to a simple prompt if not installed.
+# Theme: ~/.dotfiles/oh-my-posh/theme.omp.json
+# Install on macOS: brew install jandedobbeleer/oh-my-posh/oh-my-posh
+
+if [[ "$TERM_PROGRAM" != "WarpTerminal" ]]; then
+    if command -v oh-my-posh &>/dev/null; then
+        _omp_config="$HOME/.dotfiles/oh-my-posh/theme.omp.json"
+        if [ -f "$_omp_config" ]; then
+            eval "$(oh-my-posh init bash --config "$_omp_config")"
+        else
+            eval "$(oh-my-posh init bash)"
+        fi
+        unset _omp_config
+    else
+        # Fallback: simple colored prompt (user@host:path$)
+        set_prompt() {
+            if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+                debian_chroot=$(cat /etc/debian_chroot)
+            fi
+
+            local color_prompt=
+            if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+                color_prompt=yes
+            fi
+            if [ -n "$force_color_prompt" ]; then
+                color_prompt=yes
+            fi
+
+            local C_RESET='\[\033[00m\]'
+            local C_USER='\[\033[01;32m\]'
+            local C_PATH='\[\033[01;34m\]'
+            local C_CHROOT='\[\033[01;31m\]'
+
+            if [ "$color_prompt" = yes ]; then
+                PS1="${debian_chroot:+($C_CHROOT$debian_chroot$C_RESET)}"
+                PS1+="$C_USER\u@\h$C_RESET:$C_PATH\w$C_RESET"
+                PS1+='\$ '
+            else
+                PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+            fi
+
+            case "$TERM" in
+            xterm*|rxvt*|screen*)
+                PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+                ;;
+            esac
+
+            unset color_prompt C_RESET C_USER C_PATH C_CHROOT
+        }
+        set_prompt
+        unset set_prompt
+    fi
+fi
+
+
+# --- Section 4: Colorization & Helpers ---
+# -----------------------------------------------------------------
+# Enable color support of ls.
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+fi
+
+# Colored GCC warnings and errors.
+# Uncomment if you are a C/C++ developer.
+# export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# Make less more friendly for non-text input files.
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+
+
+# --- Section 5: Sourcing External Files ---
+# -----------------------------------------------------------------
+# Load user-specific aliases and functions.
+# This is the recommended place for personal, non-portable customizations.
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# Enable programmable completion features.
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# FZF Integration (if available)
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# Try to load local machine configuration
+if [ -f ~/.bashrc.local ]; then
+    . ~/.bashrc.local
+fi
+
+# --- Section 7: Automation & Hooks ---
+# -----------------------------------------------------------------
+
+# 极速联网检查函数 (超时设定为 1 秒)
+_is_online() {
+    local dns_servers=("223.5.5.5" "8.8.8.8" "1.1.1.1")
+    for dns in "${dns_servers[@]}"; do
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            ping -c 1 -t 1 "$dns" >/dev/null 2>&1 && return 0
+        else
+            ping -c 1 -W 1 "$dns" >/dev/null 2>&1 && return 0
+        fi
+    done
+    return 1
+}
+
+# Auto-sync sequence on shell startup (sequential to avoid race conditions)
+if [ -z "$DOTFILES_INIT_DONE" ]; then
+    export DOTFILES_INIT_DONE=1
+
+    if _is_online; then
+        # 1. Antigravity Pull (background, non-blocking)
+        if command -v agpull &>/dev/null; then
+            (agpull &> /dev/null &)
+        fi
+
+        # 2. Dotfiles Pull (sequential after short delay to reduce file conflict risk)
+        if command -v dotpull &>/dev/null; then
+            (sleep 2 && dotpull &> /dev/null &)
+        fi
+    fi
+fi
+
+# Auto-push on shell exit
+_DOTFILES_EXIT_PIDS=()
+
+exit_actions() {
+    if ! _is_online; then
+        return
+    fi
+
+    (
+        cd ~/.dotfiles || exit
+        git add .
+        git commit -m "Auto save on exit [$(date +'%F %T')]" && git push origin main
+    ) >/dev/null 2>&1 &
+    _DOTFILES_EXIT_PIDS+=($!)
+
+    if [ -n "$AG_BASE_DIR" ]; then
+       ( bash "$AG_BASE_DIR/Antigravity/User/sync_antigravity.sh" --push ) >/dev/null 2>&1 &
+       _DOTFILES_EXIT_PIDS+=($!)
+    fi
+
+    # Only disown our own background tasks
+    for pid in "${_DOTFILES_EXIT_PIDS[@]}"; do
+        disown "$pid" 2>/dev/null
+    done
+}
+trap exit_actions EXIT

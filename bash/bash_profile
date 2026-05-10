@@ -1,0 +1,12 @@
+# .bash_profile
+
+if [ -f "$HOME/.dotfiles/bash/bash_env" ]; then
+	. "$HOME/.dotfiles/bash/bash_env"
+fi
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# User specific environment and startup programs
